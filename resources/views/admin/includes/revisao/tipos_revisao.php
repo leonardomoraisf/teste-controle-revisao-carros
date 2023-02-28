@@ -1,0 +1,1 @@
+<option value="{{id_tipo}}">{{nome_tipo}}</option>
