@@ -9,8 +9,8 @@ $router->get('/dashboard',[
     'middlewares' => [
         'required-admin-login',
     ],
-    function(){
-        return new Response(200,Admin\Home::getHome());
+    function($request){
+        return new Response(200,Admin\Home::getHome($request));
     }
 ]);
 

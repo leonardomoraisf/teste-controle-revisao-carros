@@ -48,7 +48,7 @@ class Marca
         return (new Database('marcas'))->select('id = "' . $id . '"')->fetchObject(self::class);
     }
 
-     /**
+    /**
      * Method to return an user using the username
      * @param string $id
      * @return User
@@ -78,11 +78,12 @@ class Marca
 
     public function updateQtd()
     {
-        return (new Database('marcas'))->update('id = ' . $this->id, [
+        $values = [
             'qtd_homem' => $this->qtd_homem,
             'qtd_mulher' => $this->qtd_mulher,
             'qtd_total' => $this->qtd_total,
-        ]);
+        ];
+        return (new Database('marcas'))->update('id = ' . $this->id, $values);
     }
 
     /**

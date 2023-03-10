@@ -44,3 +44,14 @@ $router->post('/dashboard/forms/cliente',[
     }
 ]);
 
+// POST
+$router->get('/dashboard/clientes/{id}/delete',[
+    'middlewares' => [
+        'required-admin-login',
+    ],
+    function($request,$id){
+        return new Response(200,Admin\Clientes::setDelete($request,$id));
+    }
+]);
+
+

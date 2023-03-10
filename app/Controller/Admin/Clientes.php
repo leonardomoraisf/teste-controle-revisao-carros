@@ -8,6 +8,7 @@ use WilliamCosta\DatabaseManager\Pagination;
 use App\Model\Entity\Proprietario as Cliente;
 use App\Model\Entity\Marca;
 use App\Model\Entity\Carro;
+use PDO;
 
 class Clientes extends Page
 {
@@ -29,6 +30,9 @@ class Clientes extends Page
         switch ($queryParams['status']) {
             case 'erro':
                 return Alert::getError("Não existe esse cliente!");
+                break;
+            case 'deletado':
+                return Alert::getSuccess("Cliente totalmente deletado!");
                 break;
         }
     }
@@ -116,7 +120,6 @@ class Clientes extends Page
      */
     private static function getGeralClientesItems($request, &$obPagination)
     {
-        // Categories
         $itens = '';
 
         // TOTAL REG QUANTITY
@@ -137,13 +140,51 @@ class Clientes extends Page
             while ($obCliente = $results->fetchObject(Cliente::class)) {
                 // TOTAL CAR REGS
                 $total_carros_registrados = (new Database('carros'))->select('id_proprietario = "' . $obCliente->id . '"', null, null, 'COUNT(*) as qtd')->fetchObject()->qtd;
-                $itens .= View::render('views/admin/includes/cliente/table_geral/table_item_geral', [
-                    'nome_cliente' => $obCliente->name,
-                    'idade_cliente' => $obCliente->idade,
-                    'sexo_cliente' => Cliente::$sexos[$obCliente->sexo],
-                    'carros_registrados' => $total_carros_registrados,
-                    'id_cliente' => $obCliente->id,
-                ]);
+
+                $query_media_tempo = 'SELECT AVG(DATEDIFF(r1.data, r2.data)) AS media_tempo_revisao
+                FROM (
+                  SELECT c.id_proprietario, MAX(r.data) AS data
+                  FROM carros c
+                  LEFT JOIN revisoes r ON c.id = r.id_carro
+                  WHERE c.id_proprietario = "' . $obCliente->id . '"
+                  GROUP BY c.id_proprietario, c.id
+                ) AS carros_revisoes
+                JOIN revisoes r1 ON carros_revisoes.data = r1.data
+                LEFT JOIN revisoes r2 ON r1.id_carro = r2.id_carro AND r2.data < r1.data
+                WHERE r2.id IS NOT NULL;';
+
+
+                $media_tempo_revisao = $query_media_tempo;
+
+                $resultados_media_tempo = (new Database)->execute($media_tempo_revisao);
+
+                while ($linha = $resultados_media_tempo->fetch(PDO::FETCH_OBJ)) {
+
+                    $query_previsao = 'SELECT 
+                    c.id_proprietario,
+                    AVG(DATEDIFF(r2.data, r1.data)) as media_dias_revisao,
+                    MAX(r1.data) as ultima_revisao,
+                    DATE_ADD(MAX(r1.data), INTERVAL AVG(DATEDIFF(r2.data, r1.data)) DAY) as previsao_proxima_revisao
+                    FROM carros c
+                    LEFT JOIN revisoes r1 ON c.id = r1.id_carro
+                    LEFT JOIN revisoes r2 ON c.id = r2.id_carro AND r2.data > r1.data
+                    WHERE c.id_proprietario = "' . $obCliente->id . '"
+                    GROUP BY c.id_proprietario;';
+
+                    $resultados_previsao = (new Database)->execute($query_previsao);
+
+                    while ($linha_previsao = $resultados_previsao->fetch(PDO::FETCH_OBJ)) {
+                        $itens .= View::render('views/admin/includes/cliente/table_geral/table_item_geral', [
+                            'nome_cliente' => $obCliente->name,
+                            'idade_cliente' => $obCliente->idade,
+                            'sexo_cliente' => Cliente::$sexos[$obCliente->sexo],
+                            'carros_registrados' => $total_carros_registrados,
+                            'id_cliente' => $obCliente->id,
+                            'media_tempo_revisao' => (int)$linha->media_tempo_revisao . ' dias',
+                            'previsao_proxima_revisao' => ($total_carros_registrados == 1 || $total_carros_registrados == 0) ? 'Sem previsão' : date('d/m/Y', strtotime($linha_previsao->previsao_proxima_revisao)),
+                        ]);
+                    }
+                }
             }
 
             return $itens;
@@ -157,26 +198,68 @@ class Clientes extends Page
      * @param Pagination $obPagination
      * @return string
      */
-    private static function getSexoHomemClientesItems()
+    private static function getSexoHomemClientesItems($request)
     {
-        // Categories
+        $queryParams = $request->getQueryParams();
+
         $itens = '';
 
-        $results = (new Database('proprietarios'))->select('sexo = "' . 1 . '"', 'id DESC');
+        if (isset($queryParams['f']) && $queryParams['f'] == 'sexo') {
+            // RESULTS
+            $results = (new Database('proprietarios'))->select('sexo = "' . 1 . '"', 'id ASC');
 
-        // RENDER ITEM
-        while ($obCliente = $results->fetchObject(Cliente::class)) {
-            // TOTAL CAR REGS
-            $total_carros_registrados = (new Database('carros'))->select('id_proprietario = "' . $obCliente->id . '"', null, null, 'COUNT(*) as qtd')->fetchObject()->qtd;
-            $itens .= View::render('views/admin/includes/cliente/table_sexo/table_item_sexo', [
-                'nome_cliente' => $obCliente->name,
-                'idade_cliente' => $obCliente->idade,
-                'id_cliente' => $obCliente->id,
-                'carros_registrados' => $total_carros_registrados,
-            ]);
+            // RENDER ITEM
+            while ($obCliente = $results->fetchObject(Cliente::class)) {
+                // TOTAL CAR REGS
+                $total_carros_registrados = (new Database('carros'))->select('id_proprietario = "' . $obCliente->id . '"', null, null, 'COUNT(*) as qtd')->fetchObject()->qtd;
+
+                $query_media_tempo = 'SELECT AVG(DATEDIFF(r1.data, r2.data)) AS media_tempo_revisao
+                FROM (
+                  SELECT c.id_proprietario, MAX(r.data) AS data
+                  FROM carros c
+                  LEFT JOIN revisoes r ON c.id = r.id_carro
+                  WHERE c.id_proprietario = "' . $obCliente->id . '"
+                  GROUP BY c.id_proprietario, c.id
+                ) AS carros_revisoes
+                JOIN revisoes r1 ON carros_revisoes.data = r1.data
+                LEFT JOIN revisoes r2 ON r1.id_carro = r2.id_carro AND r2.data < r1.data
+                WHERE r2.id IS NOT NULL;';
+
+                $media_tempo_revisao = $query_media_tempo;
+
+                $resultados_media_tempo = (new Database)->execute($media_tempo_revisao);
+
+                while ($linha = $resultados_media_tempo->fetch(PDO::FETCH_OBJ)) {
+
+                    $query_previsao = 'SELECT 
+                    c.id_proprietario,
+                    AVG(DATEDIFF(r2.data, r1.data)) as media_dias_revisao,
+                    MAX(r1.data) as ultima_revisao,
+                    DATE_ADD(MAX(r1.data), INTERVAL AVG(DATEDIFF(r2.data, r1.data)) DAY) as previsao_proxima_revisao
+                    FROM carros c
+                    LEFT JOIN revisoes r1 ON c.id = r1.id_carro
+                    LEFT JOIN revisoes r2 ON c.id = r2.id_carro AND r2.data > r1.data
+                    WHERE c.id_proprietario = "' . $obCliente->id . '"
+                    GROUP BY c.id_proprietario;';
+
+                    $resultados_previsao = (new Database)->execute($query_previsao);
+
+                    while ($linha_previsao = $resultados_previsao->fetch(PDO::FETCH_OBJ)) {
+                        $itens .= View::render('views/admin/includes/cliente/table_sexo/table_item_sexo', [
+                            'nome_cliente' => $obCliente->name,
+                            'idade_cliente' => $obCliente->idade,
+                            'sexo_cliente' => Cliente::$sexos[$obCliente->sexo],
+                            'carros_registrados' => $total_carros_registrados,
+                            'id_cliente' => $obCliente->id,
+                            'media_tempo_revisao' => (int)$linha->media_tempo_revisao . ' dias',
+                            'previsao_proxima_revisao' => ($total_carros_registrados == 1 || $total_carros_registrados == 0) ? 'Sem previsão' : date('d/m/Y', strtotime($linha_previsao->previsao_proxima_revisao)),
+                        ]);
+                    }
+                }
+            }
+
+            return $itens;
         }
-
-        return $itens;
     }
 
     /**
@@ -185,26 +268,69 @@ class Clientes extends Page
      * @param Pagination $obPagination
      * @return string
      */
-    private static function getSexoMulherClientesItems()
+    private static function getSexoMulherClientesItems($request)
     {
-        // Categories
+        $queryParams = $request->getQueryParams();
+
         $itens = '';
 
-        $results = (new Database('proprietarios'))->select('sexo = "' . 2 . '"', 'id DESC');
+        if (isset($queryParams['f']) && $queryParams['f'] == 'sexo') {
+            // RESULTS
+            $results = (new Database('proprietarios'))->select('sexo = "' . 2 . '"', 'id ASC');
 
-        // RENDER ITEM
-        while ($obCliente = $results->fetchObject(Cliente::class)) {
-            // TOTAL CAR REGS
-            $total_carros_registrados = (new Database('carros'))->select('id_proprietario = "' . $obCliente->id . '"', null, null, 'COUNT(*) as qtd')->fetchObject()->qtd;
-            $itens .= View::render('views/admin/includes/cliente/table_sexo/table_item_sexo', [
-                'nome_cliente' => $obCliente->name,
-                'idade_cliente' => $obCliente->idade,
-                'id_cliente' => $obCliente->id,
-                'carros_registrados' => $total_carros_registrados,
-            ]);
+            // RENDER ITEM
+            while ($obCliente = $results->fetchObject(Cliente::class)) {
+                // TOTAL CAR REGS
+                $total_carros_registrados = (new Database('carros'))->select('id_proprietario = "' . $obCliente->id . '"', null, null, 'COUNT(*) as qtd')->fetchObject()->qtd;
+
+                $query_media_tempo = 'SELECT AVG(DATEDIFF(r1.data, r2.data)) AS media_tempo_revisao
+                FROM (
+                  SELECT c.id_proprietario, MAX(r.data) AS data
+                  FROM carros c
+                  LEFT JOIN revisoes r ON c.id = r.id_carro
+                  WHERE c.id_proprietario = "' . $obCliente->id . '"
+                  GROUP BY c.id_proprietario, c.id
+                ) AS carros_revisoes
+                JOIN revisoes r1 ON carros_revisoes.data = r1.data
+                LEFT JOIN revisoes r2 ON r1.id_carro = r2.id_carro AND r2.data < r1.data
+                WHERE r2.id IS NOT NULL;';
+
+
+                $media_tempo_revisao = $query_media_tempo;
+
+                $resultados_media_tempo = (new Database)->execute($media_tempo_revisao);
+
+                while ($linha = $resultados_media_tempo->fetch(PDO::FETCH_OBJ)) {
+
+                    $query_previsao = 'SELECT 
+                    c.id_proprietario,
+                    AVG(DATEDIFF(r2.data, r1.data)) as media_dias_revisao,
+                    MAX(r1.data) as ultima_revisao,
+                    DATE_ADD(MAX(r1.data), INTERVAL AVG(DATEDIFF(r2.data, r1.data)) DAY) as previsao_proxima_revisao
+                    FROM carros c
+                    LEFT JOIN revisoes r1 ON c.id = r1.id_carro
+                    LEFT JOIN revisoes r2 ON c.id = r2.id_carro AND r2.data > r1.data
+                    WHERE c.id_proprietario = "' . $obCliente->id . '"
+                    GROUP BY c.id_proprietario;';
+
+                    $resultados_previsao = (new Database)->execute($query_previsao);
+
+                    while ($linha_previsao = $resultados_previsao->fetch(PDO::FETCH_OBJ)) {
+                        $itens .= View::render('views/admin/includes/cliente/table_sexo/table_item_sexo', [
+                            'nome_cliente' => $obCliente->name,
+                            'idade_cliente' => $obCliente->idade,
+                            'sexo_cliente' => Cliente::$sexos[$obCliente->sexo],
+                            'carros_registrados' => $total_carros_registrados,
+                            'id_cliente' => $obCliente->id,
+                            'media_tempo_revisao' => (int)$linha->media_tempo_revisao . ' dias',
+                            'previsao_proxima_revisao' => ($total_carros_registrados == 1 || $total_carros_registrados == 0) ? 'Sem previsão' : date('d/m/Y', strtotime($linha_previsao->previsao_proxima_revisao)),
+                        ]);
+                    }
+                }
+            }
+
+            return $itens;
         }
-
-        return $itens;
     }
 
 
@@ -230,27 +356,30 @@ class Clientes extends Page
 
             $homens = (new Database('proprietarios'))->select('sexo = "' . 1 . '"');
             $qtd_homens = (new Database('proprietarios'))->select('sexo = "' . 1 . '"', null, null, 'COUNT(*) as qtd')->fetchObject()->qtd;
+            $media_homens = 0;
 
-            $acumulador = 0;
-            foreach ($homens as $key => $value) {
-                $acumulador += $value['idade'];
+            if ($qtd_homens > 0) {
+                $acumulador = 0;
+                foreach ($homens as $key => $value) {
+                    $acumulador += $value['idade'];
+                }
+                $media_homens = $acumulador / $qtd_homens;
             }
-            $media_homens = $acumulador / $qtd_homens;
-
 
             $mulheres = (new Database('proprietarios'))->select('sexo = "' . 2 . '"');
             $qtd_mulheres = (new Database('proprietarios'))->select('sexo = "' . 2 . '"', null, null, 'COUNT(*) as qtd')->fetchObject()->qtd;
-
-            $acumulador_mulheres = 0;
-            foreach ($mulheres as $key => $value) {
-                $acumulador_mulheres += $value['idade'];
+            $media_mulheres = 0;
+            if ($qtd_mulheres > 0) {
+                $acumulador_mulheres = 0;
+                foreach ($mulheres as $key => $value) {
+                    $acumulador_mulheres += $value['idade'];
+                }
+                $media_mulheres = $acumulador_mulheres / $qtd_mulheres;
             }
-            $media_mulheres = $acumulador_mulheres / $qtd_mulheres;
-
 
             $card_table = View::render('views/admin/includes/cliente/table_sexo/table_sexo', [
-                'itens_homens' => self::getSexoHomemClientesItems(),
-                'itens_mulheres' => self::getSexoMulherClientesItems(),
+                'itens_homens' => self::getSexoHomemClientesItems($request),
+                'itens_mulheres' => self::getSexoMulherClientesItems($request),
                 'media_homens' => $media_homens,
                 'media_mulheres' => $media_mulheres,
             ]);
@@ -288,6 +417,7 @@ class Clientes extends Page
             $itens .= View::render('views/admin/includes/cliente_carros/table_geral/table_item_geral', [
                 'nome_marca' => $obMarca->nome,
                 'ultima_revisao' => ($obCarro->ultima_revisao == '0000-00-00') ? 'Sem revisão' : date('d/m/Y', strtotime($obCarro->ultima_revisao)),
+                'id_carro' => $obCarro->id,
             ]);
         }
 
@@ -327,5 +457,42 @@ class Clientes extends Page
             'active_clientes' => 'active',
             'status' => self::getStatus($request),
         ]);
+    }
+
+    public static function setDelete($request, $id)
+    {
+        $obCliente = Cliente::getUserById($id);
+
+        if (!$obCliente instanceof Cliente) {
+            $request->getRouter()->redirect('/dashboard/clientes?status=erro');
+        }
+
+        $qtd_carros = (new Database('carros'))->select('id_proprietario = "' . $obCliente->id . '"', null, null, 'COUNT(*) as qtd')->fetchObject()->qtd;
+
+        $c = 0;
+        while ($c < $qtd_carros) {
+            $obCarro = (new Database('carros'))->select('id_proprietario = "' . $obCliente->id . '"')->fetchObject();
+
+            (new Database('revisoes'))->delete('id_carro = "' . $obCarro->id . '"');
+
+            $obMarca = Marca::getMarcaById($obCarro->id_marca);
+            $obMarca->qtd_total -= 1;
+
+            if ($obCliente->sexo == 1)
+                $obMarca->qtd_homem -= 1;
+
+            if ($obCliente->sexo == 2)
+                $obMarca->qtd_mulher -= 1;
+
+            $obMarca->updateQtd();
+
+            (new Database('carros'))->delete('id = "' . $obCarro->id . '"');
+
+            $c += 1;
+        }
+
+        $obCliente->delete();
+
+        $request->getRouter()->redirect('/dashboard/clientes?status=deletado');
     }
 }

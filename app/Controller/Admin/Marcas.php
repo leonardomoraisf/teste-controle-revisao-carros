@@ -11,6 +11,33 @@ class Marcas extends Page
 {
 
     /**
+     * Method to return status view
+     * @param Request $request
+     * @return string
+     */
+    public static function getStatus($request)
+    {
+        //QUERY PARAMS
+        $queryParams = $request->getQueryParams();
+
+        // STATUS
+        if (!isset($queryParams['status'])) return '';
+
+        // STATUS MESSAGES
+        switch ($queryParams['status']) {
+            case 'deletada':
+                return Alert::getSuccess("Marca deletada com sucesso!");
+                break;
+            case 'erro':
+                return Alert::getError("Essa marca possui carros registrados!");
+                break;
+            case 'sucesso':
+                return Alert::getSuccess("Marca deletada com sucesso!");
+                break;
+        }
+    }
+
+    /**
      * Method to catch marcas render
      * @param Request $request
      * @return string
@@ -97,6 +124,7 @@ class Marcas extends Page
             'scriptlinks' => $elements['scriptlinks'],
             'title' => 'Marcas',
             'user_name' => $_SESSION['user']['name'],
+            'status' => self::getStatus($request),
             'statusError' => $statusError,
             'statusSuccess' => $statusSuccess,
             'active_nova_marca' => 'active',
@@ -129,5 +157,21 @@ class Marcas extends Page
 
         // REDIRECT
         return self::getFormMarca($request, null, 'Nova marca criada com sucesso!');
+    }
+
+    public static function setDelete($request, $id)
+    {
+        $obMarca = Marca::getMarcaById($id);
+
+        if (!$obMarca instanceof Marca) {
+            $request->getRouter()->redirect('/dashboard/marcas');
+        }
+        if ($obMarca->qtd_total > 0) {
+            $request->getRouter()->redirect('/dashboard/marcas?status=erro');
+        }
+
+        $obMarca->delete();
+
+        $request->getRouter()->redirect('/dashboard/marcas?status=sucesso');
     }
 }

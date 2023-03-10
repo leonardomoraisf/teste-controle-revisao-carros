@@ -37,6 +37,8 @@ MiddlewareQueue::setMap([
         'maintenance' => \App\Http\Middleware\Maintenance::class,
         'required-admin-login' => \App\Http\Middleware\RequiredAdminLogin::class,
         'required-admin-logout' => \App\Http\Middleware\RequiredAdminLogout::class,
+        'api' => \App\Http\Middleware\Api::class,
+        'pdf' => \App\Http\Middleware\Pdf::class,
 ]);
 
 // DEFINE THE DEFAULT MIDDLEWARE MAP

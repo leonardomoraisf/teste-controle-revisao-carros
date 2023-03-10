@@ -33,3 +33,13 @@ $router->post('/dashboard/forms/{id}/carro',[
         return new Response(200,Admin\Carros::setFormCarro($request,$id));
     }
 ]);
+
+// GET
+$router->get('/dashboard/carros/{id}/delete',[
+    'middlewares' => [
+        'required-admin-login',
+    ],
+    function($request,$id){
+        return new Response(200,Admin\Carros::setDelete($request,$id));
+    }
+]);

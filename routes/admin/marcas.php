@@ -23,3 +23,13 @@ $router->post('/dashboard/marcas',[
         return new Response(200,Admin\Marcas::setFormMarca($request));
     }
 ]);
+
+// POST
+$router->get('/dashboard/marcas/{id}/delete',[
+    'middlewares' => [
+    'required-admin-login',
+],
+function($request,$id){
+    return new Response(200,Admin\Marcas::setDelete($request,$id));
+}
+]);

@@ -33,3 +33,23 @@ $router->get('/dashboard/revisoes',[
         return new Response(200,Admin\Revisoes::getRevisoes($request));
     }
 ]);
+
+// GET
+$router->get('/dashboard/revisoes/{id}/carro',[
+    'middlewares' => [
+        'required-admin-login',
+    ],
+    function($request,$id){
+        return new Response(200,Admin\Revisoes::getRevisoesCarro($request,$id));
+    }
+]);
+
+// GET
+$router->get('/dashboard/revisoes/{id}/delete',[
+    'middlewares' => [
+        'required-admin-login',
+    ],
+    function($request,$id){
+        return new Response(200,Admin\Revisoes::setDelete($request,$id));
+    }
+]);

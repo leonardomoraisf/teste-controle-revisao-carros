@@ -46,18 +46,23 @@
                         {{box_sexo_mais_carros}}
                         {{box_total_revisoes}}
 
+                        <div class="row m-auto">
+                            {{chartjs_marcas_mais_utilizadas}}
+
+                            {{chartjs_marcas_mais_revisoes}}
+                        </div>
+
+                        <div class="container">
+                            {{box_pessoas_mais_revisoes}}
+                        </div>
+
+                        <div class="container-fluid mt-4 mb-3">
+                            <a href="{{URL}}/dashboard/relatorio/geral" type="button" class="btn btn-primary btn-lg btn-block">Gerar relatório geral</a>
+                        </div>
+
                     </div>
                     <!-- /.row -->
-                    <!-- Main row -->
-                    <div class="row">
-                        <!-- Left col -->
-                        <section class="col-lg-7 connectedSortable">
-                            <!-- Custom tabs (Charts with tabs)-->
 
-                        </section>
-                        <!-- right col -->
-                    </div>
-                    <!-- /.row (main row) -->
                 </div><!-- /.container-fluid -->
             </section>
 

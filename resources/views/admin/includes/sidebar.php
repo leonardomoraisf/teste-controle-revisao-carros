@@ -1,8 +1,8 @@
 <!-- Main Sidebar Container -->
-<aside class="main-sidebar elevation-4">
+<aside class="main-sidebar sidebar-dark-primary elevation-4">
   <!-- Brand Logo -->
   <a href="{{URL}}/dashboard" class="brand-link">
-    <img src="{{URL}}/resources/assets/images/logo-simpllis.webp" alt="LubusStore Logo" class="brand-image " style="opacity: .8">
+    <img src="{{URL}}/resources/assets/images/logo-simpllis.webp" alt="Simpllis" class="brand-image " style="opacity: .8">
     <span class="brand-text font-weight-light">.</span>
   </a>
 

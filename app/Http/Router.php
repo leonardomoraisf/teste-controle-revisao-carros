@@ -53,7 +53,8 @@ class Router
      * Method to change the content type value
      * @param string $contentType
      */
-    public function setContentType($contentType){
+    public function setContentType($contentType)
+    {
         $this->contentType = $contentType;
     }
 
@@ -64,7 +65,7 @@ class Router
     {
         // ACTUAL URL
         $parseUrl = parse_url($this->url);
-        
+
         // DEFINE PREFIX
         $this->prefix = $parseUrl['path'] ?? '';
     }
@@ -75,10 +76,11 @@ class Router
      * @param string $route
      * @param array $params
      */
-    private function addRoute($method,$route,$params= []){
+    private function addRoute($method, $route, $params = [])
+    {
         // VALIDATE PARAMS
         foreach ($params as $key => $value) {
-            if($value instanceof Closure){
+            if ($value instanceof Closure) {
                 $params['controller'] = $value;
                 unset($params[$key]);
                 continue;
@@ -93,20 +95,19 @@ class Router
 
         // VALIDATE STANDARDS OF ROUTE VARS
         $patternVariable = '/{(.*?)}/';
-        if(preg_match_all($patternVariable,$route,$matches)){
-            $route = preg_replace($patternVariable,'(.*?)',$route);
+        if (preg_match_all($patternVariable, $route, $matches)) {
+            $route = preg_replace($patternVariable, '(.*?)', $route);
             $params['variables'] = $matches[1];
         }
 
         // REMOVE BAR 
-        $route = rtrim($route,'/');
+        $route = rtrim($route, '/');
 
         // VALIDATE URL PATTERN
-        $patternRoute = '/^'.str_replace('/','\/',$route).'$/';
-        
+        $patternRoute = '/^' . str_replace('/', '\/', $route) . '$/';
+
         // ADD ROUTE TO CLASS
         $this->routes[$patternRoute][$method] = $params;
-        
     }
 
     /**
@@ -114,8 +115,9 @@ class Router
      * @param string $route
      * @param array $params
      */
-    public function get($route,$params = []){
-        return $this->addRoute('GET',$route,$params);
+    public function get($route, $params = [])
+    {
+        return $this->addRoute('GET', $route, $params);
     }
 
     /**
@@ -123,8 +125,9 @@ class Router
      * @param string $route
      * @param array $params
      */
-    public function post($route,$params = []){
-        return $this->addRoute('POST',$route,$params);
+    public function post($route, $params = [])
+    {
+        return $this->addRoute('POST', $route, $params);
     }
 
     /**
@@ -132,8 +135,9 @@ class Router
      * @param string $route
      * @param array $params
      */
-    public function put($route,$params = []){
-        return $this->addRoute('PUT',$route,$params);
+    public function put($route, $params = [])
+    {
+        return $this->addRoute('PUT', $route, $params);
     }
 
 
@@ -142,48 +146,51 @@ class Router
      * @param string $route
      * @param array $params
      */
-    public function delete($route,$params = []){
-        return $this->addRoute('DELETE',$route,$params);
+    public function delete($route, $params = [])
+    {
+        return $this->addRoute('DELETE', $route, $params);
     }
 
     /**
      * Method to return the uri without prefix
      * @return string
      */
-    public function getUri(){
+    public function getUri()
+    {
         // Request URI
         $uri = $this->request->getUri();
-        
+
         // Separate the uri with prefix
-        $xUri = strlen($this->prefix) ? explode($this->prefix,$uri) : [$uri];
-        
+        $xUri = strlen($this->prefix) ? explode($this->prefix, $uri) : [$uri];
+
         // return the uri without prefix
-        return rtrim(end($xUri),'/');
+        return rtrim(end($xUri), '/');
     }
 
     /**
      * Method to return the date of actual route
      * @return array
      */
-    private function getRoute(){
+    private function getRoute()
+    {
         //URI
         $uri = $this->getUri();
-        
+
         //METHOD
         $httpMethod = $this->request->getHttpMethod();
-        
+
         //VALID ROUTES
-        foreach ($this->routes as $patternRoute=>$methods) {
+        foreach ($this->routes as $patternRoute => $methods) {
             // VERIFY URI == PATTERN
-            if(preg_match($patternRoute,$uri,$matches)){
+            if (preg_match($patternRoute, $uri, $matches)) {
                 // VERIFY METHOD
-                if(isset($methods[$httpMethod])){
+                if (isset($methods[$httpMethod])) {
                     // REMOVE FIRST POSITION
                     unset($matches[0]);
 
                     // PROCESSED VARS
                     $keys = $methods[$httpMethod]['variables'];
-                    $methods[$httpMethod]['variables'] = array_combine($keys,$matches);
+                    $methods[$httpMethod]['variables'] = array_combine($keys, $matches);
                     $methods[$httpMethod]['variables']['request'] = $this->request;
 
                     // RETURN ROUTE PARAMS
@@ -201,13 +208,14 @@ class Router
      * Method to execute the actual route
      * @return Response
      */
-    public function run(){
+    public function run()
+    {
         try {
             // ACTUAL ROUTE
             $route = $this->getRoute();
 
             // VERIFY CONTROLLER
-            if(!isset($route['controller'])){
+            if (!isset($route['controller'])) {
                 throw new Exception("The URL can't be processed", 500);
             }
 
@@ -222,10 +230,9 @@ class Router
             }
 
             // RETURN QUEUE EXECUTION OF MIDDLEWARES
-            return (new MiddlewareQueue($route['middlewares'],$route['controller'],$args))->next($this->request);
-
+            return (new MiddlewareQueue($route['middlewares'], $route['controller'], $args))->next($this->request);
         } catch (Exception $e) {
-            return new Response($e->getCode(),$this->getErrorMessage($e->getMessage()),$this->contentType);
+            return new Response($e->getCode(), $this->getErrorMessage($e->getMessage()), $this->contentType);
         }
     }
 
@@ -233,10 +240,16 @@ class Router
      * @param string $message
      * @return mixed
      */
-    private function getErrorMessage($message){
-        
-        switch($this->contentType){
+    private function getErrorMessage($message)
+    {
+
+        switch ($this->contentType) {
             case 'application/json':
+                return [
+                    'error' => $message
+                ];
+                break;
+            case 'application/pdf':
                 return [
                     'error' => $message
                 ];
@@ -246,27 +259,28 @@ class Router
                 return $message;
                 break;
         }
-
     }
 
     /**
      * Method to return the actual URL
      * @return string
      */
-    public function getCurrentUrl(){
-        return $this->url.$this->getUri();
+    public function getCurrentUrl()
+    {
+        return $this->url . $this->getUri();
     }
 
     /**
      * Method to redirect the URL
      * @param string $route
      */
-    public function redirect($route){
+    public function redirect($route)
+    {
         //URL
-        $url = $this->url.$route;
+        $url = $this->url . $route;
 
         //EXECUTE REDIRECT
-        header('location: '.$url);
+        header('location: ' . $url);
         exit;
     }
 }

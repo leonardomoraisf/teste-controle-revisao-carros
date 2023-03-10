@@ -61,20 +61,28 @@ class Carro
 
     public function update()
     {
-        return (new Database('carros'))->update('id = ' . $this->id, [
+        $values = [
             'id_marca' => $this->id_marca,
             'id_proprietario' => $this->id_proprietario,
             'ultima_revisao' => $this->ultima_revisao,
-        ]);
+        ];
+        return (new Database('carros'))->update('id = ' . $this->id, $values);
     }
 
     /**
      * Method to delete in db with the actual instance
      */
-    public function delete()
+    public function delete($obCliente)
     {
         $obMarca = Marca::getMarcaById($this->id_marca);
-        $obMarca->updateQtd($obMarca->qtd - 1);
+        $obMarca->updateQtd($obMarca->qtd_total - 1);
+
+        if($obCliente->sexo == 1)
+            $obMarca->updateQtd($obMarca->qtd_homem - 1);
+        
+        if($obCliente->sexo == 2)
+            $obMarca->updateQtd($obMarca->qtd_mulher - 1);
+
         return (new Database('carros'))->delete('id = ' . $this->id);
     }
 }

@@ -15,6 +15,12 @@ include('routes/public.php');
 // INCLUDE ADMIN ROUTES
 include('routes/admin.php');
 
+// INCLUDE API ROUTES
+include('routes/api.php');
+
+// INCLUDE RELATORIO ROUTES
+include('routes/relatorio.php');
+
 // PRINT RESPONSE OF ROUTE
 $router->run()
         ->sendResponse();

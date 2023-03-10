@@ -27,8 +27,11 @@ class Carros extends Page
 
         // STATUS MESSAGES
         switch ($queryParams['status']) {
-            case '':
-                return Alert::getSuccess("");
+            case 'erro':
+                return Alert::getError("Esse carros não existe!");
+                break;
+            case 'deletado':
+                return Alert::getSuccess("Carro e revisões deletadas!");
                 break;
         }
     }
@@ -301,20 +304,34 @@ class Carros extends Page
         $obCarro->register();
 
         $obMarca = Marca::getMarcaById($obCarro->id_marca);
+        $obMarca->qtd_total += 1;
 
-        if ($obCliente->sexo == 1) {
-            $obMarca->qtd_homem = $obMarca->qtd_homem + 1;
-            $obMarca->qtd_total = $obMarca->qtd_total + 1;
-        }
+        if ($obCliente->sexo == 1)
+            $obMarca->qtd_homem += 1;
 
-        if ($obCliente->sexo == 2) {
-            $obMarca->qtd_mulher = $obMarca->qtd_mulher + 1;
-            $obMarca->qtd_total = $obMarca->qtd_total + 1;
-        }
+        if ($obCliente->sexo == 2)
+            $obMarca->qtd_mulher += 1;
 
         $obMarca->updateQtd();
 
         // REDIRECT
         $request->getRouter()->redirect('/dashboard/forms/' . $obCarro->id . '/revisao');
+    }
+
+    public static function setDelete($request, $id)
+    {
+        $obCarro = Carro::getCarroById($id);
+
+        if (!$obCarro instanceof Carro) {
+            $request->getRouter()->redirect('/dashboard/carros?status=erro');
+        }
+
+        $obCliente = Cliente::getUserById($obCarro->id_proprietario);
+
+        (new Database('revisoes'))->delete('id_carro = "'.$obCarro->id.'"');
+
+        $obCarro->delete($obCliente);
+
+        $request->getRouter()->redirect('/dashboard/carros?status=deletado');
     }
 }

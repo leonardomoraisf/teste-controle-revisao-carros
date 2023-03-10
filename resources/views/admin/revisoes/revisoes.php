@@ -20,8 +20,9 @@
             <div class="content-header">
                 <div class="container-fluid">
                     <div class="row mb-2">
-                        <div class="col-sm-6">
-                            <h1 class="m-0">{{title}}</h1>
+                    <div class="col-sm-6 d-flex align-items-center">
+                            <h1 class="m-0 mr-3">{{title}}</h1>
+                            <a href="{{URL}}/dashboard/relatorio/revisoes" type="button" class="btn btn-secondary btn-lg">Gerar relatório revisões</a>
                         </div><!-- /.col -->
                         <div class="col-sm-6">
                             <ol class="breadcrumb float-sm-right">
@@ -36,11 +37,6 @@
 
             <!-- Main content -->
             <section class="content">
-                <nav class="nav nav-pills nav-justified mb-4">
-                    <a class="nav-item nav-link {{active_geral}}" href="{{URL}}/dashboard/revisoes">Geral</a>
-                    <a class="nav-item nav-link {{active_marcas}}" href="{{URL}}/dashboard/revisoes?f=marcas">Marcas</a>
-                    <a class="nav-item nav-link {{active_pessoas}}" href="{{URL}}/dashboard/revisoes?f=pessoas">Pessoas</a>
-                </nav>
                 <!-- Default box -->
                 {{card_table}}
                 <div class="col">

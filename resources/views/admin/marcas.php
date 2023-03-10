@@ -41,6 +41,7 @@
       <section class="content">
         <div class="container-fluid">
           <div class="row">
+            {{status}}
             {{statusSuccess}}
             {{statusError}}
           </div>
@@ -60,7 +61,7 @@
               <!-- /.card-header -->
               <!-- form start -->
               <div class="card-body">
-                <div class="row w-50">
+                <div class="row w-75">
                   <div class="col-sm-6">
                     <!-- select -->
                     <div class="form-group">
@@ -72,14 +73,15 @@
                   </div>
                 </div>
               </div>
+              <div class="row m-2">
+                <div class="col float-right">
+                  <button type="submit" class="btn btn-success float-right">Submit</button>
+                </div>
+              </div>
               <!-- /.card-body -->
             </div>
             <!-- /.card -->
-            <div class="row mb-4">
-              <div class="col float-right">
-                <button type="submit" class="btn btn-success float-right">Submit</button>
-              </div>
-            </div>
+
             <div class="d-flex justify-content-center">
               {{box_quantidade_marca_homem}}
               {{box_quantidade_marca_mulher}}

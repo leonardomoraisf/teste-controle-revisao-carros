@@ -6,17 +6,23 @@
                     <th style="width: 1%">
                         #
                     </th>
-                    <th style="width: 20%">
+                    <th style="width: 15%">
                         Nome
                     </th>
-                    <th style="width: 5%">
-                        Carros Registrados
-                    </th>
-                    <th style="width: 10%;">
+                    <th style="width: 5%;">
                         Idade
                     </th>
-                    <th style="width: 10%;">
+                    <th style="width: 5%;">
                         Sexo
+                    </th>
+                    <th style="width: 10%">
+                        Carros Registrados
+                    </th>
+                    <th style="width: 15%;">
+                        Média entre revisões
+                    </th>
+                    <th style="width: 15%;">
+                        Previsão próxima revisão
                     </th>
                     <th style="width: 20%">
                     </th>

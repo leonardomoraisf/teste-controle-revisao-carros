@@ -5,7 +5,7 @@ namespace App\Controller\Admin;
 use App\Utils\View;
 use WilliamCosta\DatabaseManager\Database;
 use App\Model\Entity\Proprietario as Cliente;
-use App\Model\Entity\Carro;
+use PDO;
 
 class Home extends Page
 {
@@ -15,7 +15,7 @@ class Home extends Page
      * @param Pagination $obPagination
      * @return string
      */
-    private static function getQtdCarrosHomens()
+    public static function getQtdCarrosHomens()
     {
         $results = (new Database('proprietarios'))->select('sexo = "' . 1 . '"');
 
@@ -36,7 +36,7 @@ class Home extends Page
      * @param Pagination $obPagination
      * @return string
      */
-    private static function getQtdCarrosMulheres()
+    public static function getQtdCarrosMulheres()
     {
         $results = (new Database('proprietarios'))->select('sexo = "' . 2 . '"');
 
@@ -51,11 +51,30 @@ class Home extends Page
         return $acumulador;
     }
 
+    public static function getPessoasMaisRevisoesItems($request)
+    {
+        $itens = '';
+
+        $query = 'SELECT p.id, p.name as name, COUNT(r.id) as qtd FROM proprietarios p INNER JOIN carros c ON p.id = c.id_proprietario INNER JOIN revisoes r ON c.id = r.id_carro GROUP BY p.id ORDER BY qtd DESC LIMIT 4';
+
+        $results = (new Database)->execute($query);
+
+        // RENDER ITEM
+        while ($obCliente = $results->fetch(PDO::FETCH_OBJ)) {
+            $itens .= View::render('views/admin/includes/home/box_pessoas_mais_revisoes/item', [
+                'id' => $obCliente->id,
+                'name' => $obCliente->name,
+                'qtd' => $obCliente->qtd,
+            ]);
+        }
+        return $itens;
+    }
+
     /**
      * Method to return home view
      * @return string
      */
-    public static function getHome()
+    public static function getHome($request)
     {
         $total_clientes = (new Database('proprietarios'))->select(null, null, null, 'COUNT(*) as qtd')->fetchObject()->qtd;
         $total_carros = (new Database('carros'))->select(null, null, null, 'COUNT(*) as qtd')->fetchObject()->qtd;
@@ -88,6 +107,12 @@ class Home extends Page
             'box_sexo_mais_carros' => View::render('views/admin/includes/home/box_sexo_mais_carros'),
             'sexo_mais_carros' => $sexo_mais_carros,
             'frase_condicional' => $frase_condiocional,
+
+            'chartjs_marcas_mais_utilizadas' => View::render('views/admin/includes/home/chartjs_marcas_mais_utilizadas'),
+            'chartjs_marcas_mais_revisoes' => View::render('views/admin/includes/home/chartjs_marcas_mais_revisoes'),
+            'box_pessoas_mais_revisoes' => View::render('views/admin/includes/home/box_pessoas_mais_revisoes', [
+                'itens' => self::getPessoasMaisRevisoesItems($request),
+            ]),
         ]);
     }
 }

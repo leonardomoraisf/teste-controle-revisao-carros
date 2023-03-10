@@ -13,7 +13,7 @@
         </a>
     </td>
     <td class="project-actions text-right">
-        <a class="btn btn-info btn-sm" href="{{URL}}/dashboard/carros/{{id_cliente}}/revisao">
+        <a class="btn btn-info btn-sm" href="{{URL}}/dashboard/revisoes/{{id_carro}}/carro">
             <i class="fas fa-pencil">
             </i>
             Revisões
